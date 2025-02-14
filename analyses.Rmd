@@ -1,7 +1,6 @@
 ---
-title: "Defining microbial dysbiosis with machine learning in an African American cohort with self-reported hair loss"
-author: "Judy-Malas, Sebastian Reczek, Jarrad Hampton-Marcell" 
-date: "02/11/2025" #last update
+title: "R Markdown for defining microbial dysbiosis"
+date: "02/14/2025" #last update
 output: 
   html_document: 
     toc: yes
@@ -16,27 +15,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load packages, message=F}
 
-#library(devtools)
 library(ggplot2)
-#library(vegan)
-#library(dplyr)
 library(phyloseq)
 library(randomForest)
-#library(RColorBrewer)
 library(tidyverse)
 library(ggpubr)
-#library(ggsci)
 library(dysbiosisR)
-#library(prettydoc)
-#library(microViz)
-#library(brew)
-#library(pairwiseAdonis)
-#library(ggvenn)
-#library(extrafont)
+library(ggvenn)
 library(NBZIMM)
-#library(ZIBR)
+library(ZIBR)
 library(reshape)
-#library(nlme)
+
 
 ```
 
@@ -77,7 +66,12 @@ ps_rel.df$Genus <- sub("g__", "", ps_rel.df$Genus)
 
 ```{r plot options}
 
- theme_set(theme_bw()) #set the theme for all plots
+#set the theme for all plots
+theme_set(theme_bw()) 
+
+#a color palette for use in plotting
+palette <- c("lightpink", "cornflowerblue", "yellow2", "darkblue", "darkorange1", "deeppink", "darkviolet", "palegreen",  "springgreen4", "black", "goldenrod", "red", "blue", "#3DB7E9",  "#D55E00", "#F0E442",'#253494', "gray50", "purple", "orange", "lightgreen", "forestgreen") 
+
  
 ```
 
@@ -130,7 +124,7 @@ ps_data.df %>%
   labs(x = "", y = "Average Relative Abundance (%)")
 
 
-ggsave("figures/FigS1.pdf")
+#ggsave("figures/FigS1.pdf")
 
 
 ```
@@ -185,7 +179,6 @@ alpha.table <- merge(alpha, df, by = "X.SampleID")
  
 ```
 
-
 ```{r Shannon v. Age regression}
 
 #Shannon vs Age
@@ -193,28 +186,21 @@ ggplot(alpha.table,
        aes(x = Age, y = diversity_shannon, fill = Area_Cond, color = Area_Cond)) +
     geom_point(aes(color = Area_Cond)) +
     geom_smooth(method = "lm", fill = "gray", guide = "none") +
-    stat_cor(aes(label = paste(..rr.label..)), guide = "none") +
+    stat_cor(aes(label = paste(..rr.label..)), show.legend = FALSE) +
     labs(x = "Age", y = "Shannon Diversity", title = "A") +
     scale_color_manual(values = c("red", "black"))+
     guides(color = guide_legend(override.aes = list(shape = 16, size = 3, fill = NA)))+
     theme(axis.line.y = element_blank(),
         axis.ticks.y = element_blank(), 
-        axis.text.x = element_text(family = "Arial", size = 12),
-        axis.text.y = element_text(family = "Arial", size = 12), 
-        legend.text = element_text(family = "Arial", size = 10))
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        legend.text = element_text(size = 10))
 
   
-#ggsave("Pub_Figures/v2_Pub_Figures/Fig1a.jpeg", height = 4, width = 5)
-#ggsave("Pub_Figures/PDF/Fig1a.pdf", height = 4, width = 5)
 
-
-
-
-
+#ggsave("figures/Fig1a.pdf", height = 4, width = 5)
 
 ```
-
-Check if alpha diversity is still different w/in age groups depending on site conditions
 
 ```{r ages by 20 years}
 
@@ -233,12 +219,11 @@ alpha.table %>%
   labs(x = " ", y = "Shannon Diversity", title = "B") +
       theme(axis.line.y = element_blank(),
         axis.ticks.y = element_blank(), 
-        axis.text.x = element_text(family = "Arial", size = 10),
-        axis.text.y = element_text(family = "Arial", size = 10), 
-        legend.text = element_text(family = "Arial", size = 10), 
-        legend.title = element_blank())
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none")
  
-  
+ggsave("figures/Fig1b.pdf", height = 4, width = 5)
 
 
 ```
@@ -331,8 +316,6 @@ dysbiosis$Area_Cond <- factor(dysbiosis$Area_Cond,
 
 ```
 
-
-
 ```{r model performance}
 
 #AOC plot to check sensitivity and specificity of the model
@@ -375,38 +358,6 @@ dysbiosis %>%
 
 ```
 
-```{r  dysbiosis wilcox tests w/ covariates}
-
-ggplot(dysbiosis_4, aes(CentroidDist_score, Age))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  stat_cor() 
-
-
-ggplot(dysbiosis_4, aes(CentroidDist_score, Stress_Scale))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  stat_cor() 
-
-ggplot(dysbiosis_4, aes(CentroidDist_score, Dandruff_Scale))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  stat_cor() 
-
-ggplot(dysbiosis_4, aes(Hair_Type, CentroidDist_score)) +
-  geom_boxplot()+
-  geom_point()+
-  stat_compare_means(method = "wilcox.test")+
-  theme_bw()
-
-ggplot(dysbiosis_4, aes(Hair_Style_1, CentroidDist_score)) +
-  geom_boxplot()+
-  geom_point()+
-  stat_compare_means()+
-  theme_bw()
-
-```
-
 ```{r Fig 2 Gradient plot}
 
 
@@ -423,21 +374,18 @@ plotDysbiosisGradient(df=dysbiosis,
                                   bg_colors = rev(volcano),
                                   jitter_width = 0.1) +
   labs(y="Dysbiosis Score", subtitle = " ") +
+  theme(legend.title = element_blank())+
   # adjust the x and y values to fit to plot
-  ggplot2::annotate("text",  x = 0.65, y = .1, label = "Center", color="white")
+  ggplot2::annotate("text",  x = 0.65, y = .1, label = "Center",color="white")
 
-ggsave("Figures/Fig2.pdf", height =6, width =5)
+#ggsave("Figures/Fig2.pdf", height =6, width =5)
 
 
 
 ```
 
 
-
-
-## Mixed Effects Model (MEM)
-
-
+## Mixed Effects Model 
 
 ```{r prepdata}
 
@@ -492,8 +440,7 @@ data.var <- left_join(data, df.meta, by = "X.SampleID" )
 
 ```
 
-
-```{r run model 1}
+```{r run model}
 
 mem <- NBZIMM::mms(y = df.agg.otus, fixed = ~ Area_Cond, data = data.var,  random = ~ 1 | Age,  min.p = 0.2, method = "nb")
 
@@ -501,10 +448,14 @@ mem <- NBZIMM::mms(y = df.agg.otus, fixed = ~ Area_Cond, data = data.var,  rando
 
 ```{r extract model data}
 
+
 # Extract data
 out = fixed(mem)$dist
 out = out[out[,2]!="(Intercept)", ]
 res = out[, 3:5]
+
+#remove the Area_CondAfflicted from the rowname
+rownames(res) <- gsub("--Area_CondAfflicted", "", rownames(res)) 
 
 # make a data frame
 res.data <- as.data.frame(res)
@@ -543,31 +494,24 @@ res.data.df %>%
 
 ```
 
-
 ```{r Make a nicer plot}
 
 res.data.df %>% 
-  filter(pvalue <0.05) %>% 
+  filter(pvalue < 0.05) %>% 
   filter(Genus != "Unassigned") %>% 
   filter(Genus != "") %>% 
   mutate(Genus1 = reorder(Genus, Estimate)) %>% 
   ggplot(aes(x = Genus1, y = Estimate)) +
     geom_point(alpha = 0.5) +
-    #geom_jitter()+
-    geom_errorbar(aes(ymin=Estimate-Std.Error,
-                      ymax=Estimate+Std.Error), width=.1, alpha = 0.5) +
+    geom_errorbar(aes(ymin=Estimate-Std.Error, ymax=Estimate+Std.Error), width=.1, alpha = 0.5) +
     coord_flip() +
+   labs(y = "Estimate", x = " ")+
     geom_hline(yintercept = 0, lty = 2) +
     theme(axis.line.y = element_blank(),
         axis.ticks.y = element_blank(), 
-       axis.title.y= element_blank(),
-        axis.text.x = element_text(family = "Arial", size = 10),
-        axis.text.y = element_text(family = "Arial", size = 10))
-
-
-
-
-## 100 signficant OTUs 
+       axis.text.y = element_text(size = 12)) 
+ 
+#ggsave("figures/FigS3.pdf")
 
 ```
 
@@ -596,76 +540,55 @@ res.data.df %>%
 
 ```
 
+
 ## Random Forest with dysbiosis score
 
 ```{r set up for RF }
 
-#check sample names in dysbiosis object 
-dysbiosis_4$X.SampleID
-
-#check sample names in sample data of alopecia object 
-alopecia@sam_data$X.SampleID
-
-#sample names should match 
-
-#create dysbiotic character vector
-dysbiosis_4 <- dysbiosis_4 %>% 
+#set dysbiosis threshold and add column 
+dysbiosis <- dysbiosis %>% 
   mutate(dysbiotic = case_when(CentroidDist_score > 0 ~ "Dysbiotic", 
                               CentroidDist_score < 0 ~ "Normobiosis" )) 
 
+#add dysbiosis score and assignments to the sample data
+ps_data@sam_data$score <- dysbiosis$dysbiotic
 
-#add dysbiosis score to the sample data
-alopecia@sam_data$score <- dysbiosis_4$dysbiotic
+ps_data@sam_data$numericScore <- dysbiosis$CentroidDist_score
 
-alopecia@sam_data$numericScore <- dysbiosis_4$CentroidDist_score
-
-#Make training dataset
-predict <- t(otu_table(alopecia))
+#Prep data
+predict <- t(otu_table(ps_data))
 
 #Check dimensions
 dim(predict)
 
 #Create response variable
-
-res <- as.factor(sample_data(alopecia)$score)
-
-#res2 <- as.numeric(sample_data(alopecia)$numericScore) #for regression
+res <- as.factor(sample_data(ps_data)$score)
 
 #Combine predict variable and response variable into one dataframe
 machine.data <- data.frame(res, predict)
 
-#machine.data2 <- data.frame(res2, predict) #for regression
-
+#check dimensions
 dim(machine.data)
 
 ```
 
-* When you do a classification you always want an odd number of tree [don't want a 50% 50% decision]
-* When you have 3 categories you don't want a multiple of 3, etc. 
-
 ```{r class RF}
-# 
-# set.seed(8)
-# 
-# class3<- randomForest(res ~ ., data = machine.data, ntree = 1001, importance = TRUE, nodesize = 1)
-# 
-# print(class3)
-# 
-# saveRDS(class3, "output/class3")
 
-class3 <- readRDS("output/class3")
+# 
+#class <- randomForest(res ~ ., data = machine.data, ntree = 1001, importance = TRUE, nodesize = 1)
 
-#saveRDS(class, "output/class") 
-#class <- readRDS("output/class") # this is before setting use_squared = F in the dysbiosis score
+#saveRDS(class, "output/RF") 
 
+class <- readRDS("output/RF") #by default a random forest will be different every time you run it, so here we're loading saved RF previously made
 
+print(class)
 
 
 ```
 
 ```{r Confusion Matrix Plot for RF}
 
-confusiondf <- as.data.frame(class3$confusion)
+confusiondf <- as.data.frame(class$confusion)
 
 confusionfixed <- data.frame(Actual = c("Dysbiotic", "Dysbiotic", "Normobiosis", "Normobiosis"), Predicted = c("Dysbiotic", "Normobiosis", "Dysbiotic", "Normobiosis"), Count = c(confusiondf[1,1], confusiondf[1,2], confusiondf[2,1], confusiondf[2,2]), Freq = c(confusiondf[1,3], confusiondf[1,3], confusiondf[2,3], confusiondf[2,3]))
 
@@ -679,43 +602,45 @@ ggplot(confusionfixed, aes(x = Predicted, y = Actual, fill = Count)) +
 
 ```
 
+```{r RF important taxa }
 
-Which taxa?
+#extract the predictors from the RF 
+imp.taxa <- randomForest::importance(class)
 
-```{r class3 RF important taxa }
-
-imp.taxa <- randomForest::importance(class3)
-
+#make a dataframe 
 imp.taxa <- data.frame(predictors = rownames(imp.taxa), imp.taxa)
 
+#rename the object for easier coding
 imp <- imp.taxa
 
-# Order the predictor levels by importance
+# Order the predictor levels by importance (Mean decrease accuracy)
 imp.sort <- arrange(imp, desc(MeanDecreaseAccuracy))
 imp.sort$predictors <- factor(imp.sort$predictors, levels = imp.sort$predictors)
 
-# Select the top 10 predictors
-imp.10 <- imp.sort[1:100, ]
+# Select the top 100 predictors
+imp.100 <- imp.sort[1:100, ]
 
 # Change Column name to say "OTUID" rather than "predictors"
-colnames(imp.10)[which(names(imp.10) == "predictors")] <- "OTUID"
+colnames(imp.100)[which(names(imp.100) == "predictors")] <- "OTUID"
 
 # Remove "X" from OTUID column
-imp.10$OTUID <- gsub("X", "", paste(imp.10$OTUID))
+imp.100$OTUID <- gsub("X", "", paste(imp.100$OTUID))
 
-
-# Make Taxa table a data frame
-otu_df <- as.data.frame(tax_table(alopecia))
+# Make Taxa table from phyloseq object a data frame
+otu_df <- as.data.frame(tax_table(ps_data))
 
 # Make OTU IDs (row names) into column
 otu_df$OTUID <- rownames(otu_df)
 
-# Merge Two data frames using matched column
-imp10.merged <- merge(imp.10, otu_df, by = "OTUID")
+# Merge two data frames using matched column so that we know which taxa are assigned to the OTUs
+imp100.merged <- merge(imp.100, otu_df, by = "OTUID")
 
-RFtop100_Otus <- imp10.merged
+#rename the object
+RFtop100_Otus <- imp100.merged
 
-number <- unique(RFtop100_Otus$Genus)
+
+#count the number of unique genera
+unique(RFtop100_Otus$Genus)
 
 
 
@@ -723,281 +648,186 @@ number <- unique(RFtop100_Otus$Genus)
 
 
 ```{r Mean Decrease Accuracy plots for classification RF }
-# palette <- c("lightpink", "cornflowerblue", "yellow2", "darkblue", "darkorange1", "deeppink", "darkviolet", "palegreen",  "springgreen4", "black", "goldenrod", "red", "blue", "#3DB7E9",  "#D55E00", "#F0E442",'#253494', "gray50", "purple", "orange", "lightgreen", "forestgreen")
 
-imp10.merged$Genus <- sub("g__", "", imp10.merged$Genus)
+#cleanup Genus names
+imp100.merged$Genus <- sub("g__", "", imp100.merged$Genus)
 
-
-imp10.merged %>% 
-  group_by(Genus) %>% 
-  summarise(sum = sum(MeanDecreaseAccuracy)) %>% 
-  mutate(Genus = reorder(Genus, sum)) %>%
+#plot 
+imp100.merged %>% 
+  mutate(Genus = reorder(Genus, MeanDecreaseAccuracy)) %>% 
   filter(Genus != "") %>% 
   filter(Genus != is.na(Genus)) %>% 
-ggplot(aes(x = Genus, y  = sum)) +
-                                geom_bar(stat = "identity") +
-                                #scale_color_manual(values= palette )+
-                                #scale_fill_manual(values = palette)+
-                                coord_flip() +
-  theme(legend.position = "top", 
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank(), 
-       axis.title.y= element_blank(),
-        axis.text.x = element_text(family = "Arial", size = 10),
-        axis.text.y = element_text(family = "Arial", size = 10))+
-                                labs(x = "Top Taxa for Classifying Normal vs Afflicted", 
-                                  y = "Mean Decrease Accuracy (%)",
-                                  fill = "") +
-                                theme(
-                                legend.text = element_text(face = "bold")
-                                )+
-  theme_bw()
+   ggplot(aes(x = reorder(Genus, MeanDecreaseAccuracy, sum), 
+             y = MeanDecreaseAccuracy, 
+             fill = OTUID)) +  # Stacked by OTU
+  geom_bar(stat = "identity", color = "black") +
+  coord_flip() +
+  labs(x = "Top taxa for classifying dysbiotic scalp sites",  y = "Mean Decrease Accuracy (%)")+
+  theme(legend.position = "none")+
+  #guides(fill = guide_legend(override.aes = list(fill = "grey50"))) 
+  annotate("text", y = 50, 
+           x = 1,
+           label = "Colors represent different OTUs")
 
-#ggsave("Pub_Figures/Fig6.pdf", height = 5, width =6)
-#ggsave("Pub_Figures/Fig6.jpeg", height = 5, width =6)
+ggsave("figures/FigS2.pdf", height = 5, width =6)
 
-imp10.merged %>% 
-  group_by(Genus) %>% 
-  summarise(sum = sum(MeanDecreaseAccuracy)) %>% 
-  filter(Genus != "g__") %>% 
-  filter(Genus != is.na(Genus)) %>% 
-  arrange(desc(sum))
+
+
 
 ```
 
-
-## Compare predictive taxa
+## Compare Important Taxa 
 
 
 ```{r v2 Extract the significant taxa from both tests}
 
-#extract diff abundant taxa from the model 
-res.data <- res.data %>% 
-  filter(pvalue <0.05)
+#extract diff abundant taxa from the mixed effected model
+res.data <- res.data %>% filter(pvalue <0.05)
 
-unique(res.data$OTU)
-
-
-#RF top 100 OTUs
+#check the intersection of OTUs between the random forest and mixed effects models
 shared_sig.OTU <- intersect(res.data$OTU, RFtop100_Otus$OTU)
 
 shared_sig.OTU #42 shared otus 
 
-#keep only OTUs sig in both models
-OTU.filt.alo.df <- alopecia.df %>% 
-  filter(OTU %in% shared_sig.OTU) #2546 rows
+#make a new data frame keeping only OTUs sig in both models
+OTU.filt.df <- ps_data.df %>% filter(OTU %in% shared_sig.OTU) 
 
 #repeat for the relative abundance data frame 
-OTU.filt.alo_rel.df <- ps_rel.df%>% 
-  filter(OTU %in% shared_sig.OTU)
+OTU.filt_rel.df <- ps_rel.df%>% filter(OTU %in% shared_sig.OTU)
 
-unique(OTU.filt.alo.df$OTU)
-
-
-unique(OTU.filt.alo.df$Genus) #16 unique genera are shared
 
 
 ```
 
-
-Can't figure out how to make the Venn diagram properly. Need to merge by OTUs assign genera to those OTUs while keep the "test" variable. I may just use the OTU% Venn diagram and then add on the Genera later
 ```{r Venn Diagram}
 
 
-#add a variable to each one indicating which test they came from 
+#add a variable to each set of results indicating which test they came from 
 
 res.data$test <- "Mixed Effects Model" 
 
 RFtop100_Otus$test <- "Random Forest Classifer"
 
+#change the column name so they match
 RFtop100_Otus$OTU <- RFtop100_Otus$OTUID
 
+#create a shared data frame
 shared <- full_join(res.data, RFtop100_Otus, by = c("OTU", "test"))
-
 
 #keep only OTUs that are in both models
 keep <- union(res.data$OTU, RFtop100_Otus$OTU)
+shared <- shared %>%  filter(OTU %in% keep)
 
-shared <- shared %>% 
-  filter(OTU %in% keep)
-
-
+#make a list with the two tests seperated
 data_list <- split(shared$OTU, shared$test)
 
-
+#make a venn diagram
 ggvenn(data_list, label_sep = "\n", fill_color = c("white", "white"), show_elements = F)
 
-
-#ggsave("Pub_Figures/v2_Pub_Figures/Figure3A.jpeg")
-# ggsave("Pub_Figures/v2_Pub_Figures/VennGENUS.jpeg", height = 10)
-
-```
-
-
-
-
-## Confirm differentially abundant species
-```{r shared between random forest and model 1}
-
-OTU.filt.alo.df$log10Abund <- log10( 1 + OTU.filt.alo.df$Abundance)
-
-OTU.filt.alo.df %>% 
-   filter(Genus != "") %>% 
-  filter(Genus != "NA") %>% 
-  ggplot(aes(Area_Cond, log10Abund)) +
-  stat_compare_means()+
-  facet_wrap(~Genus)
-
-
-
-```
-Taxa that are not sig different: 
-- Actinobacillus
-- Actinomyces
-- Alloiococcus
-- Dialister
-- Granulicatella
-- Neisseria
-- Peptoniphilus
-- Staphylococcus
-- Veillonella
-
-
-```{r remove taxa that are not sig different}
-
-Genera <- sort(unique(OTU.filt.alo.df$Genus))
-
-remove <- c("Alloiococcus", "Chryseobacterium",  "Granulicatella" ,"Neisseria", "Actinobacillus", "Actinomyces" ,"Dialister" ,  "Peptoniphilus" , "Staphylococcus","Veillonella" )
-# 
-Genera_sig <- Genera[!Genera %in% remove]
-# 
-# final_sig
-# 
-#keep only the important genera
-
-OTU.filt.alo.df <- OTU.filt.alo.df %>% 
-  filter(Genus %in% Genera_sig)
-
-OTU.filt.alo_rel.df <- OTU.filt.alo_rel.df%>% 
-  filter(Genus %in% Genera_sig)
-# 
-# unique(final_filt_alo.df$Genus)
-
-sort(unique(OTU.filt.alo.df$Genus))
-
-sort(unique(OTU.filt.alo.df$Genus))
+ggsave("figures/FigS4.pdf")
 
 
 ```
 
 
-Write a loop to test all the important OTUs and report the wilcox test values
-Plus correct 
 
 
-## plots for important taxa
+## Confirm differentially abundant OTUs
+
+```{r remove OTUs that are not sig different}
+
+#transform to log10 abundances
+OTU.filt.df$log10Abund <- log10( 1 + OTU.filt.df$Abundance)
+
+# Run Wilcoxon test for each OTU and store p-values
+otu_pvals_notsig <- OTU.filt.df %>%
+  group_by(OTU) %>%
+  summarise(p_value = wilcox.test(log10Abund ~ Area_Cond)$p.value) %>% 
+  filter(p_value > 0.05)
+
+#Extract OTU names from the data frame of shared OTUs by both RF and Mixed effects model 
+OTUs <- sort(unique(OTU.filt.df$OTU))
+
+#OTUs to remove
+remove <- otu_pvals_notsig$OTU
+
+#Significant OTUs
+OTUs_sig <- OTUs[!OTUs %in% remove]
+
+#keep only significant OTUs
+OTU.filt.df <- OTU.filt.df %>% 
+  filter(OTU %in% OTUs_sig)
+
+OTU.filt_rel.df <- OTU.filt_rel.df%>% 
+  filter(OTU %in% OTUs_sig)
+
+sort(unique(OTU.filt_rel.df$Genus))
+
+sort(unique(OTU.filt.df$Genus))
 
 
-```{r plot abundance of genera from the filtered OTUs}
+```
 
-#keep only OTUs sig in both models
-OTU.filt.alo_rel.df <- ps_rel.df%>% 
-  filter(OTU %in% shared_sig.OTU)
 
-OTU.filt.alo_rel.df$Phylum <- sub("p__", "", OTU.filt.alo_rel.df$Phylum)
 
-OTU.filt.alo_rel.df  %>% 
-   filter(Genus %in% Genera_sig) %>% 
+```{r Core taxa plot abundance of genera from the filtered OTUs}
+
+# Count number of facets
+facet_count <- OTU.filt_rel.df %>%
+  filter(Genus != "") %>%
+  distinct(Genus) %>%
+  nrow()
+
+
+# Calculate missing facets to make the last row complete
+n_cols <- 3  # Number of facet columns
+n_missing <- (ceiling(facet_count / n_cols) * n_cols) - facet_count  
+
+# Add dummy Genus entries to balance the last row
+OTU.filt_rel.df_padded <- OTU.filt_rel.df %>%
+  bind_rows(data.frame(Genus = rep(" ", n_missing), OTU = NA, Abundance = NA, Area_Cond = NA))  # Fill with blanks
+
+
+OTU.filt_rel.df %>% 
+  filter(Genus != "") %>%
+  group_by(Genus) %>%  # Group by Genus before reordering
+  mutate(OTU = factor(OTU, levels = unique(OTU[order(Abundance, decreasing = TRUE)]))) %>% 
+  ggplot(aes(OTU, Abundance, fill = Area_Cond)) +
+  geom_boxplot(alpha =0.7, outliers = F) +
+  geom_point(aes(OTU, Abundance), position = position_dodge(width = 0.75), size = 0.3, alpha = 0.7) +
+  scale_y_log10(breaks = scales::breaks_log(n = 10),     
+                labels = scales::number_format(accuracy = 0.0001)) +
+  coord_flip() +
+  labs(y= "Relative Abundance") +
+  scale_fill_manual(values = c("red", "black")) +
+  theme(legend.title = element_blank(),
+  axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5), 
+  axis.text.y = element_blank())+
+ # facet_wrap(~Genus, ncol = 3, scales = "free_y") +
+  facet_wrap_paginate(~Genus, ncol = 3, nrow = 3, page = 1, scales = "free_y")  # Adjust as needed# Free y-axis per facet to avoid blank OTUs
+
+ggsave("figures/Figure4.pdf")
+# ggsave("figures/coretaxa2.jpeg")
+
+ 
+
+
+```
+
+
+OTU.filt_rel.df  %>% 
+    filter(Genus != "") %>% 
     mutate(Genus = reorder(Genus, Abundance)) %>% 
     ggplot(aes(Genus, Abundance, fill = Area_Cond))+
-    geom_boxplot(alpha = 0.5)+
+    geom_boxplot(alpha = 0.5) +
     scale_y_log10(breaks = scales::breaks_log(n = 10),     
                   labels = scales::number_format(accuracy = 0.0001))+
-    #geom_point(aes(Genus, Abundance, color = Area_Cond), alpha = 0.5)+
     coord_flip()+
     theme_bw()+
-    #scale_color_manual(values = c("red", "black"))+
-    #stat_compare_means(method = "wilcox")+
-    scale_fill_manual(values = c("black", "red"))+
-  theme(legend.title = element_blank())
- 
-#ggsave("Pub_Figures/v2_Pub_Figures/figure3b.jpeg")
+    scale_fill_manual(values = c("red", "black"))+
+    theme(legend.title = element_blank())
 
-
-OTU.filt.alo_rel.df  %>% 
-  filter(Genus %in% Genera_sig) %>% 
-  group_by(Species) %>% 
-  count()
-  
- OTU.filt.alo_rel.df  %>% 
-  filter(Genus %in% Genera_sig) %>% 
-  group_by(Phylum, Genus) %>% 
-  count()
-
- 
-
-
-```
-
-```{r}
-
-ps_rel.df %>% 
-  filter(Genus == "Pseudomonas") %>% 
-  ggplot(aes(Genus, Abundance, fill = Area_Cond))+
-    geom_boxplot(alpha = 0.5)+
-  scale_y_log10(breaks = scales::breaks_log(n = 10),     
-                  labels = scales::number_format(accuracy = 0.0001))+
-    #geom_point(aes(Genus, Abundance, color = Area_Cond), alpha = 0.5)+
-    coord_flip()+
-    theme_bw()+
-    #scale_color_manual(values = c("red", "black"))+
-    #stat_compare_means(method = "wilcox")+
-    scale_fill_manual(values = c("black", "red"))
-
-ps_rel.df$Species <- sub("s__", "", ps_rel.df$Species)
-
-ps_rel.df %>% 
-  filter(Species == c("epidermidis", "acnes")) %>% 
-  ggplot(aes(Species, Abundance, fill = Area_Cond))+
-    geom_boxplot(alpha = 0.5)+
-  scale_y_log10(breaks = scales::breaks_log(n = 10), labels = scales::number_format(accuracy = 0.0001))+
-  #scale_y_log10()+
-    #geom_point(aes(Genus, Abundance, color = Area_Cond), alpha = 0.5)+
-    coord_flip()+
-    theme_bw()+
-    #scale_color_manual(values = c("red", "black"))+
-    #stat_compare_means(method = "wilcox")+
-    scale_fill_manual(values = c("black", "red"))
-
-
-
-
-```
-
-
-
-## Taxa correlation with metadata
-
-```{r stress scale}
-
-alopecia.df$Stress_Scale <- as.numeric(alopecia.df$Stress_Scale)
-
-ggplot(alopecia.df, aes(Area_Cond, Stress_Scale))+
-  geom_boxplot()+
-  stat_compare_means(method="kruskal.test", label = "p.signif")
-
-
-```
-
-```{r scalp density}
-
-
-ggplot(alopecia.df, aes(Area_Cond, Density_Scale))+
-  geom_boxplot()+
-  stat_compare_means(method="kruskal.test", label = "p.signif")
-
-
-```
-
+# ggsave("figures/coretaxa1.pdf")
+# ggsave("figures/coretaxa1.jpeg")
 
 
