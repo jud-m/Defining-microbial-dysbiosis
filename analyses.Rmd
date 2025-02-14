@@ -772,21 +772,6 @@ sort(unique(OTU.filt.df$Genus))
 
 ```{r Core taxa plot abundance of genera from the filtered OTUs}
 
-# Count number of facets
-facet_count <- OTU.filt_rel.df %>%
-  filter(Genus != "") %>%
-  distinct(Genus) %>%
-  nrow()
-
-
-# Calculate missing facets to make the last row complete
-n_cols <- 3  # Number of facet columns
-n_missing <- (ceiling(facet_count / n_cols) * n_cols) - facet_count  
-
-# Add dummy Genus entries to balance the last row
-OTU.filt_rel.df_padded <- OTU.filt_rel.df %>%
-  bind_rows(data.frame(Genus = rep(" ", n_missing), OTU = NA, Abundance = NA, Area_Cond = NA))  # Fill with blanks
-
 
 OTU.filt_rel.df %>% 
   filter(Genus != "") %>%
@@ -803,31 +788,15 @@ OTU.filt_rel.df %>%
   theme(legend.title = element_blank(),
   axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5), 
   axis.text.y = element_blank())+
- # facet_wrap(~Genus, ncol = 3, scales = "free_y") +
-  facet_wrap_paginate(~Genus, ncol = 3, nrow = 3, page = 1, scales = "free_y")  # Adjust as needed# Free y-axis per facet to avoid blank OTUs
+  facet_wrap(~Genus, ncol = 3, scales = "free_y") 
 
-ggsave("figures/Figure4.pdf")
-# ggsave("figures/coretaxa2.jpeg")
+#ggsave("figures/Figure4.pdf")
+
 
  
 
 
 ```
 
-
-OTU.filt_rel.df  %>% 
-    filter(Genus != "") %>% 
-    mutate(Genus = reorder(Genus, Abundance)) %>% 
-    ggplot(aes(Genus, Abundance, fill = Area_Cond))+
-    geom_boxplot(alpha = 0.5) +
-    scale_y_log10(breaks = scales::breaks_log(n = 10),     
-                  labels = scales::number_format(accuracy = 0.0001))+
-    coord_flip()+
-    theme_bw()+
-    scale_fill_manual(values = c("red", "black"))+
-    theme(legend.title = element_blank())
-
-# ggsave("figures/coretaxa1.pdf")
-# ggsave("figures/coretaxa1.jpeg")
 
 
