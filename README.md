@@ -1,6 +1,6 @@
 This repository serves as a companion to the article "Utility of a quantitative approach to microbial dysbiosis using machine learning in an African American cohort with self-reported hair loss". 
 
-In this work we provide an approach to calculating dysbiosis microbiome-associated diseases.
+In this work we provide an approach to calculating dysbiosis for microbiome-associated diseases.
 
 Our dysbiosis score is a modification of the score reported in [AlShawaqfeh et al. 2017](https://pubmed.ncbi.nlm.nih.gov/29040443/). The microbial dysbiosis score is defined as the difference between (the Aitchison distance between the test sample and the healthy class centroid) and (the Atichison distance between the test sample and the diseased class centroid). In other words, the dysbiosis score for each sample measures its closeness to the group (hair-loss afflicted or normal) mean. The dysbiosis score D of the test sample z, is defined as
 
