@@ -1,4 +1,5 @@
 This repository serves as a companion to the article "Utility of a quantitative approach to microbial dysbiosis using machine learning in an African American cohort with self-reported hair loss". 
+All stastical analyses and figures produced in the paper can be found here [https://judymalas.com/Defining-microbial-dysbiosis/analyses.html](https://judymalas.com/Defining-microbial-dysbiosis/analyses.html)
 
 In this work we provide an approach to calculating dysbiosis for microbiome-associated diseases.
 
@@ -14,4 +15,4 @@ A dysbiosis score of 0 indicates that the test sample is at equal distance from 
 
 Dysbiosis scores were calculated using the R package [‘dysbiosisR’ v1.0.4](https://github.com/microsud/dysbiosisR).
 
-All stastical analyses and figures produced in the paper can be found here [https://judymalas.com/Defining-microbial-dysbiosis/analyses.html](https://judymalas.com/Defining-microbial-dysbiosis/analyses.html)
+
