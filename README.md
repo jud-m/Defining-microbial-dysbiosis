@@ -7,7 +7,7 @@ Our dysbiosis score is a modification of the score reported in [AlShawaqfeh et a
 
 The microbial dysbiosis score here is defined as the difference between (the Aitchison distance between the test sample and the healthy class centroid) and (the Atichison distance between the test sample and the diseased class centroid). In other words, the dysbiosis score for each sample measures its closeness to the group (hair-loss afflicted or normal) mean. The dysbiosis score D of the test sample z, is defined as
 
-D(z; μCN,μCA)=dA(z, μCN)−dA(z, μCA)
+  D(z; μCN,μCA)=dA(z, μCN)−dA(z, μCA)
 
 where μCN and μCA are the centroids (mean composition) of the normal and afflicted samples, respectively and dA is the Aitchison distance either between the test sample and the μCN or μCA. 
 
