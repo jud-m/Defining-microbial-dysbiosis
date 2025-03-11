@@ -8,8 +8,7 @@ D(z; μCN,μCA)=dA(z, μCN)−dA(z, μCA)
 
 where μCN and μCA are the centroids (mean composition) of the normal and afflicted samples, respectively and dA is the Aitchison distance either between the test sample and the μCN or μCA. 
 
-A dysbiosis score of 0 indicates that the test sample is at equal distance from the center of both class (afflicted and normal) centroid, and higher scores indicate more deviation from normal. Calculated dysbiosis scores were classified into two groups of either dysbiosis (score > 0) or normobiosis (score < 0). Code used to calculate dysbiosis scores along with all microbial analyses conducted is publicly available (https://github.com/jud-m/Defining-microbial-dysbiosis). 
-![image](https://github.com/user-attachments/assets/71e062d1-5c47-404a-bcef-906f69443866)
+A dysbiosis score of 0 indicates that the test sample is at equal distance from the center of both class (afflicted and normal) centroid, and higher scores indicate more deviation from normal. Calculated dysbiosis scores were classified into two groups of either dysbiosis (score > 0) or normobiosis (score < 0). 
 
 Dysbiosis scores were calculated using the R package [‘dysbiosisR’ v1.0.4](https://github.com/microsud/dysbiosisR).
 
