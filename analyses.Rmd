@@ -20,11 +20,13 @@ library(phyloseq)
 library(randomForest)
 library(tidyverse)
 library(ggpubr)
+library(microbiome)
 library(dysbiosisR)
 library(ggvenn)
 library(NBZIMM)
 library(ZIBR)
 library(reshape)
+library(RColorBrewer)
 
 
 ```
@@ -41,6 +43,29 @@ ps_data <- readRDS("data/ps_data")
 
 #remove Caucasian subjects
 ps_data  <- subset_samples(ps_data, Race_ID == "African.American")
+
+# Extract sample data as a data frame
+sample_df <- as_data_frame(sample_data(ps_data))
+
+# Add Age_Cat2
+sample_df <- sample_df %>%
+  mutate(Age = as.numeric(as.character(Age))) %>%
+  mutate(Age_Cat2 = case_when(
+    Age < 40 ~ "Less than 40", 
+    Age >= 40 & Age < 60 ~ "40 to 59", 
+    Age >= 60 ~ "60+"
+  ))
+
+sample_df <- as.data.frame(sample_df)
+
+#Preserve original rownames (sample names)
+rownames(sample_df) <- rownames(ps_data@sam_data)
+
+
+identical(colnames(ps_data@otu_table), rownames(sample_df))
+
+# add back to physeq
+sample_data(ps_data) <- sample_data(sample_df)
 
 #convert phylseq object into a dataframe 
 ps_data.df <- psmelt(ps_data)
@@ -75,6 +100,99 @@ palette <- c("lightpink", "cornflowerblue", "yellow2", "darkblue", "darkorange1"
  
 ```
 
+## Explore metadata 
+
+```{r prep metadata file}
+
+df.meta <- as(sample_data(ps_data), "data.frame") 
+
+
+```
+
+```{r only one observation per particpant}
+
+df.meta.unique <- df.meta[!duplicated(df.meta$Person_ID), ]
+
+df.meta.unique %>% count(Hair_Type)
+
+df.meta.unique %>% count(Race_ID)
+
+df.meta.unique %>% count(Gender)
+
+df.meta.unique %>% count(Cleansing_Freq)
+
+range(df.meta.unique$Age)
+
+```
+
+```{r how many participants}
+
+#check the number of participants 
+length(unique(df.meta$Person_ID))
+
+#check the number of samples per participants
+df.meta %>% 
+  count(Person_ID) %>% 
+  arrange(desc(n))
+
+#check the number of samples per hair site type
+df.meta %>% 
+  count(Area_Cond)
+
+#check the age ranges 
+
+range(df.meta$Age)
+
+
+
+```
+
+```{r Co-variate associations w/ Age}
+
+# Density
+ggplot(df.meta.unique, aes(x = Age, y = Density_Scale)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_classic() +
+  stat_cor() +
+  labs(x = "Age (years)",
+       y = "Scalp Density") +
+ theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.x = element_text(family = "Arial", size = 12),
+        axis.text.y = element_text(family = "Arial", size = 12))+
+  theme_bw()
+
+
+#  stress
+ggplot(df.meta.unique, aes(x = Age, y = Stress_Scale)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_classic() +
+  stat_cor() +
+  labs(x = "Age (years)",
+       y = "Scalp Stress") +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.x = element_text(family = "Arial", size = 12),
+        axis.text.y = element_text(family = "Arial", size = 12))+
+  theme_bw()
+
+
+
+```
+
+
+```{r}
+
+#check the number of samples per participants
+df.meta %>% 
+  count(Person_ID, X.SampleID)
+
+
+```
+
+
 ## Explore taxonomy
 
 ```{r basic info}
@@ -101,9 +219,8 @@ percent_genera <- ps_data.df %>%
 percent_genera
 
 
+
 ```
-
-
 
 ```{r Average relative abundance of major genera}
 
@@ -124,12 +241,39 @@ ps_data.df %>%
   labs(x = "", y = "Average Relative Abundance (%)")
 
 
-#ggsave("figures/FigS1.pdf")
-
-
 ```
 
+```{r Abundant Genera}
 
+plot_df <- ps_rel.df %>% 
+  mutate(Genus = ifelse(Abundance < 0.05, " Other < 5%", Genus),
+         Genus = ifelse(is.na(Genus) | Genus == "", "Unclassified", Genus)) %>%
+  group_by(Sample, Area_Cond, Genus) %>% 
+  summarize(Abundance = sum(Abundance), .groups = "drop") %>%
+  group_by(Area_Cond, Genus) %>%
+  summarize(mean_abundance = mean(Abundance) * 100,
+    sd_abundance = sd(Abundance) * 100,
+    .groups = "drop")
+
+ggplot(plot_df, aes(x = Genus, y = mean_abundance, fill = Area_Cond)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9), alpha=0.7) +
+  geom_errorbar(aes(ymin = mean_abundance - sd_abundance, ymax = mean_abundance + sd_abundance),
+                width = 0.3, position = position_dodge(width = 0.9)) +
+  theme_bw() +
+  labs(x = "", y = "Average Relative Abundance (%)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.title = element_blank()) +
+  stat_compare_means(
+    method = "wilcox",
+    paired = TRUE,
+    hide.ns = TRUE,
+    label = "p.signif") +
+  scale_fill_manual(values = c("red", "black"))+
+  coord_flip()
+
+ggsave("figures/Supplemental_AverageRelativeAbd_Genus.pdf")
+  
+```
 
 ## Alpha diversity
 
@@ -154,7 +298,7 @@ alpha.table <- merge(alpha, df, by = "X.SampleID")
 #Shannon diversity
  ggplot(alpha.table, aes(x = Area_Cond, y = diversity_shannon, fill = Area_Cond)) +
   geom_boxplot() +
-    stat_compare_means() +
+    stat_compare_means(method="wilcox") +
   labs(x = "Skin Site",
        y = "Shannon") +
     theme(axis.line.y = element_blank(),
@@ -186,7 +330,7 @@ ggplot(alpha.table,
        aes(x = Age, y = diversity_shannon, fill = Area_Cond, color = Area_Cond)) +
     geom_point(aes(color = Area_Cond)) +
     geom_smooth(method = "lm", fill = "gray", guide = "none") +
-    stat_cor(aes(label = paste(..rr.label..)), show.legend = FALSE) +
+    stat_cor() +
     labs(x = "Age", y = "Shannon Diversity", title = "A") +
     scale_color_manual(values = c("red", "black"))+
     guides(color = guide_legend(override.aes = list(shape = 16, size = 3, fill = NA)))+
@@ -194,11 +338,13 @@ ggplot(alpha.table,
         axis.ticks.y = element_blank(), 
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
-        legend.text = element_text(size = 10))
+        legend.text = element_text(size = 10), 
+        legend.title = element_blank())
 
   
 
-#ggsave("figures/Fig1a.pdf", height = 4, width = 5)
+ggsave("figures/Fig1a.pdf", height = 4, width = 5)
+
 
 ```
 
@@ -228,7 +374,7 @@ ggsave("figures/Fig1b.pdf", height = 4, width = 5)
 
 ```
 
-```{r diversity v. wash frequency and hairstyle}
+```{r diversity v. other co-variates}
 
 alpha.table %>% 
   filter(Area_Cond == "Afflicted") %>% 
@@ -275,13 +421,229 @@ alpha.table %>%
         legend.text = element_text(family = "Arial", size = 10))
 
 
-
+alpha.table %>% 
+  filter(Area_Cond == "Afflicted") %>% 
+  ggplot(aes(x = Gender, y = diversity_shannon, fill = Gender)) +
+  geom_boxplot() +
+    stat_compare_means(label = "p.signif") +
+  geom_point()+
+  labs(x = " ",
+       y = "Shannon Diversity") +
+      theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.x = element_text(family = "Arial", size = 12),
+        axis.text.y = element_text(family = "Arial", size = 12), 
+        legend.text = element_text(family = "Arial", size = 10))
 
 
 
 
 
 ```
+
+## Beta Diversity
+
+```{r transform data}
+
+#CLR before Euclidean distance for Aitchison distances
+#Center log ratio the phyloseq file
+alo_clr <- microbiome::transform(ps_data, "clr")
+
+
+
+
+```
+
+```{r  RDA}
+
+#PCA via phyloseq
+ord_clr <- phyloseq::ordinate(alo_clr, "RDA") 
+
+#ord_clr <- phyloseq::ordinate(alo_clr, "PCoA") 
+
+plot_ordination(alo_clr, ord_clr, color = "Area_Cond")
+
+#Plot scree plot
+phyloseq::plot_scree(ord_clr) +
+  geom_bar(stat="identity", fill = "blue") +
+  labs(x = "Axis", y = "Proportion of Variance")
+
+#Examine eigenvalues and % proportion of variance explained
+head(ord_clr$CA$eig)
+
+#What proportion of variance explained in actual understandable form as a decimal
+sapply(ord_clr$CA$eig[1:10], function(x) x / sum(ord_clr$CA$eig))
+
+
+```
+
+```{r fig1c}
+
+
+clr1 <- ord_clr$CA$eig[1] / sum(ord_clr$CA$eig)
+clr2 <- ord_clr$CA$eig[2] / sum(ord_clr$CA$eig)
+
+
+phyloseq::plot_ordination(ps_data, ord_clr, type="samples", color="Area_Cond")+
+  geom_point() +
+  coord_fixed(clr2 / clr1) +
+  stat_ellipse(aes(group = Area_Cond), linetype = 2)+
+  scale_color_manual(values = c("red", "black"))+
+  theme(legend.title = element_blank(), legend.position = "none")+
+  labs(title = "C")
+
+
+ggsave("figures/Fig1c.pdf", width = 4, height = 6)
+
+
+
+
+```
+
+
+```{r connect by person ID}
+
+ord <- ordinate(alo_clr, method = "PCoA", distance = "euclidean")
+
+# Extract ordination coordinates and merge with metadata
+ord_df <- plot_ordination(alo_clr, ord, type = "samples", justDF = TRUE)
+
+# Add metadata: Site condition and Person_ID
+ord_df$Area_Cond <- sample_data(alo_clr)$Area_Cond
+ord_df$Person_ID <- sample_data(alo_clr)$Person_ID
+
+# Plot with lines connecting samples from the same individual
+ggplot(ord_df, aes(x = Axis.1, y = Axis.2, color = Area_Cond)) +
+  geom_point(size = 3) +
+  geom_line(aes(group = Person_ID), color = "gray70", linewidth = 0.5) +
+  theme_minimal() +
+  labs(title = "PCoA (CLR + Euclidean): Afflicted vs. Normal Sites",
+       x = "PCoA Axis 1", y = "PCoA Axis 2",
+       color = "Site Type") +
+  theme(legend.position = "right")
+
+```
+
+
+```{r ADONIS convariates}
+
+#Generate distance matrix
+clr_dist_matrix <- phyloseq::distance(alo_clr, method = "euclidean")
+
+#ADONIS test for Age -> Also significant!
+vegan::adonis2(clr_dist_matrix ~phyloseq::sample_data(alo_clr)$Age_Cat2, permutations = 10000)
+
+#ADONIS test for Gender -> Also significant!
+vegan::adonis2(clr_dist_matrix ~phyloseq::sample_data(alo_clr)$Gender, permutations = 10000)
+
+
+```
+```{r ANDONIS area condition}
+
+#ADONIS test for Normal vs Afflicted
+vegan::adonis2(clr_dist_matrix ~phyloseq::sample_data(alo_clr)$Area_Cond, permutations = 10000, strata=sample_df$Person_ID)
+
+#ADONIS test for Normal vs Afflicted -> Significant
+vegan::adonis2(clr_dist_matrix ~phyloseq::sample_data(alo_clr)$Area_Cond, permutations = 10000)
+
+```
+
+```{r Dispersion test}
+
+#Dispersion test for Area_Cond (Normal vs Afflicted)
+dispr <- vegan::betadisper(clr_dist_matrix, phyloseq::sample_data(alo_clr)$Area_Cond)
+anova(dispr)
+
+#Dispersion test for age
+dispr2 <- vegan::betadisper(clr_dist_matrix, phyloseq::sample_data(alo_clr)$Age_Cat2)
+anova(dispr2)
+
+
+#Dispersion test for Gender
+dispr3 <- vegan::betadisper(clr_dist_matrix, phyloseq::sample_data(alo_clr)$Gender)
+anova(dispr3)
+
+
+
+```
+
+```{r Dispersion plots}
+
+#Dispersion plot for Area_Cond + boxplot
+plot(dispr, main = "Ordination Centroids and Dispersion Labeled: Aitchison Distance", sub = "")
+
+boxplot(dispr, main = "", xlab = "")
+
+#Dispersion plot for Age_Cat + boxplot
+plot(dispr2, main = "Ordination Centroids and Dispersion Labeled:Aitchison Distance", sub = "")
+
+boxplot(dispr2, main = "", xlab = "")
+
+
+#Dispersion plot for Gender + boxplot
+plot(dispr3, main = "Ordination Centroids and Dispersion Labeled:Aitchison Distance", sub = "")
+boxplot(dispr3, main = "", xlab = "")
+
+```
+
+```{r Sample Variance}
+
+#Generate distance matrix
+clr_dist_matrix <- phyloseq::distance(alo_clr, method = "euclidean")
+
+# Distance matrix to long format
+dist_long <- as.data.frame(as.table(as.matrix(clr_dist_matrix)))
+colnames(dist_long) <- c("Sample1", "Sample2", "Distance")
+
+#  Add metadata
+meta <- sample_df[, c("X.SampleID", "Person_ID", "Area_Cond")]
+
+dist_long <- dist_long %>%
+  inner_join(meta, by = c("Sample1" = "X.SampleID")) %>%
+  inner_join(meta, by = c("Sample2" = "X.SampleID"),
+             suffix = c("_1", "_2"))
+
+#keep a copy of the matrix 
+dist_long_1 <- dist_long
+
+# Remove redundant/self comparisons
+dist_long <- dist_long %>%
+  filter(Sample1 < Sample2)
+
+# Define "Within" vs "Between"
+dist_long <- dist_long %>%
+  mutate(Comparison = if_else(Person_ID_1 == Person_ID_2, "Within", "Between")) %>% 
+  mutate(Condition = Area_Cond_1)
+
+#keep a copy 
+dist_long_2 <-dist_long
+
+
+ggplot(dist_long, aes(x = Comparison, y = Distance, fill = Condition)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  #facet_wrap(~ Condition) +
+  labs(title = "Within vs Between-Person Distances by Condition",
+       y = "Distance", x = NULL) +
+  theme_minimal() +
+  scale_fill_manual(values = c("black", "red"))+
+  stat_compare_means(method = "wilcox")+
+  theme(legend.title = element_blank())
+
+ggsave("figures/varianceWcondition.pdf")
+
+
+ggplot(dist_long, aes(x = Comparison, y = Distance)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  #facet_wrap(~ Condition) +
+  labs(title = "Within vs Between-Person Distances",
+       y = "Distance", x = NULL) +
+  theme_minimal() +
+  stat_compare_means(method = "wilcox")
+
+ggsave("figures/variance.pdf")
+
+```
+
 
 ## Dysbiosis Scores
 
@@ -361,25 +723,43 @@ dysbiosis %>%
 ```{r Fig 2 Gradient plot}
 
 
-
-volcano <- c("#003f5c", "#58508d","#bc5090","#ff6361", "#ffa600")
-
 plotDysbiosisGradient(df=dysbiosis,
                                   score="CentroidDist_score",
                                   high_line = 0.0,
                                   group_var = "Area_Cond",
                                   group_colors=c("Normal" = "black", 
                                                  "Afflicted"= "brown3"),
-                                  point_size = 2,
-                                  bg_colors = rev(volcano),
+                                
+                        
+                                  bg_colors = rev(brewer.pal(9, "Reds")),
                                   jitter_width = 0.1) +
   labs(y="Dysbiosis Score", subtitle = " ") +
   theme(legend.title = element_blank())+
   # adjust the x and y values to fit to plot
   ggplot2::annotate("text",  x = 0.65, y = .1, label = "Center",color="white")
 
-#ggsave("Figures/Fig2.pdf", height =6, width =5)
+ggsave("Figures/Fig2.pdf", height =6, width =5)
 
+plotDysbiosisGradient(df = dysbiosis,
+                      score = "CentroidDist_score",
+                      high_line = 0.0,
+                      group_var = "Area_Cond",
+                      group_colors = c("Normal" = "black", "Afflicted" = "brown3"),
+                      bg_colors = rev(brewer.pal(9, "Reds")),
+                      jitter_width = 0) +
+  geom_text(data = dysbiosis,
+            aes(y = CentroidDist_score, 
+                x = 1, # or adjust to match the y-location of points
+                label = Person_ID),
+            #position = position_jitter(width = 0.1, height = 0),
+            size = 3, 
+            vjust = -1, 
+            check_overlap = TRUE) +
+  labs(y = "Dysbiosis Score", subtitle = " ") +
+  theme(legend.title = element_blank()) +
+  annotate("text", x = 0.65, y = 0.1, label = "Center", color = "white")
+
+#ggsave("figures/labeleddysbiois.pdf")
 
 
 ```
@@ -442,15 +822,21 @@ data.var <- left_join(data, df.meta, by = "X.SampleID" )
 
 ```{r run model}
 
-mem <- NBZIMM::mms(y = df.agg.otus, fixed = ~ Area_Cond, data = data.var,  random = ~ 1 | Age,  min.p = 0.2, method = "nb")
+#mem <- NBZIMM::mms(y = df.agg.otus, fixed = ~ Area_Cond, data = data.var,  random = ~ 1 | Age,  min.p = 0.2, method = "nb")
+
+#saveRDS(mem,  "output/mem")
 
 ```
 
 ```{r extract model data}
 
+mem <- readRDS("output/mem")
 
 # Extract data
-out = fixed(mem)$dist
+
+out <- mem$call$fixed
+
+out = NBZIMM::fixed(mem)$dist
 out = out[out[,2]!="(Intercept)", ]
 res = out[, 3:5]
 
@@ -511,7 +897,7 @@ res.data.df %>%
         axis.ticks.y = element_blank(), 
        axis.text.y = element_text(size = 12)) 
  
-#ggsave("figures/FigS3.pdf")
+ggsave("figures/Fig4.pdf")
 
 ```
 
@@ -646,7 +1032,6 @@ unique(RFtop100_Otus$Genus)
 
 ```
 
-
 ```{r Mean Decrease Accuracy plots for classification RF }
 
 #cleanup Genus names
@@ -663,13 +1048,9 @@ imp100.merged %>%
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
   labs(x = "Top taxa for classifying dysbiotic scalp sites",  y = "Mean Decrease Accuracy (%)")+
-  theme(legend.position = "none")+
-  #guides(fill = guide_legend(override.aes = list(fill = "grey50"))) 
-  annotate("text", y = 50, 
-           x = 1,
-           label = "Colors represent different OTUs")
+  theme(legend.position = "none")
 
-ggsave("figures/FigS2.pdf", height = 5, width =6)
+ggsave("figures/Fig3.pdf", height = 5, width =6)
 
 
 
@@ -724,7 +1105,7 @@ data_list <- split(shared$OTU, shared$test)
 #make a venn diagram
 ggvenn(data_list, label_sep = "\n", fill_color = c("white", "white"), show_elements = F)
 
-ggsave("figures/FigS4.pdf")
+
 
 
 ```
@@ -790,7 +1171,7 @@ OTU.filt_rel.df %>%
   axis.text.y = element_blank())+
   facet_wrap(~Genus, ncol = 3, scales = "free_y") 
 
-#ggsave("figures/Figure4.pdf")
+ggsave("figures/Figure5.pdf")
 
 
  
