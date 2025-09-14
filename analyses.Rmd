@@ -325,6 +325,7 @@ alpha.table <- merge(alpha, df, by = "X.SampleID")
 
 ```{r Shannon v. Age regression}
 
+
 #Shannon vs Age
 ggplot(alpha.table,
        aes(x = Age, y = diversity_shannon, fill = Area_Cond, color = Area_Cond)) +
@@ -369,10 +370,36 @@ alpha.table %>%
         axis.text.y = element_text(size = 12),
         legend.position = "none")
  
-ggsave("figures/Fig1b.pdf", height = 4, width = 5)
+#ggsave("figures/Fig1b.pdf", height = 4, width = 5)
 
 
 ```
+```{r figure based on the median age }
+
+alpha.table %>% 
+  mutate(Age_Cat2 =if_else(
+      Age < median(Age, na.rm = TRUE),
+       "Age < 52",  " Age ≥  52")) %>% 
+  ggplot(aes(x = Area_Cond, y = diversity_shannon)) +
+  geom_boxplot(aes(color = Area_Cond), show.legend = F) +
+  geom_point(aes(color = Area_Cond))+
+  stat_compare_means(method="wilcox") +
+  stat_cor()+
+  scale_color_manual(values = c("red", "black"))+
+  facet_wrap(~Age_Cat2)+
+  guides(color = guide_legend(override.aes = list(shape = 16, size = 3, fill = NA)))+
+  labs(x = " ", y = "Shannon Diversity", title = "B") +
+      theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.position = "none")
+
+ggsave("figures/fig1brevised.pdf")
+
+```
+
+
 
 ```{r diversity v. other co-variates}
 
