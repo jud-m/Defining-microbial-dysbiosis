@@ -50,10 +50,9 @@ sample_df <- as_data_frame(sample_data(ps_data))
 # Add Age_Cat2
 sample_df <- sample_df %>%
   mutate(Age = as.numeric(as.character(Age))) %>%
-  mutate(Age_Cat2 = case_when(
-    Age < 40 ~ "Less than 40", 
-    Age >= 40 & Age < 60 ~ "40 to 59", 
-    Age >= 60 ~ "60+"
+  mutate(Age_Cat2 = if_else(
+      Age < median(Age, na.rm = TRUE),
+       "Age < 52",  " Age ≥  52"
   ))
 
 sample_df <- as.data.frame(sample_df)
@@ -374,10 +373,11 @@ alpha.table %>%
 
 
 ```
+
 ```{r figure based on the median age }
 
 alpha.table %>% 
-  mutate(Age_Cat2 =if_else(
+  mutate(Age_Cat2 = if_else(
       Age < median(Age, na.rm = TRUE),
        "Age < 52",  " Age ≥  52")) %>% 
   ggplot(aes(x = Area_Cond, y = diversity_shannon)) +
@@ -395,7 +395,7 @@ alpha.table %>%
         axis.text.y = element_text(size = 12),
         legend.position = "none")
 
-ggsave("figures/fig1brevised.pdf")
+ggsave("figures/fig1brevised.pdf", )
 
 ```
 
@@ -565,6 +565,7 @@ vegan::adonis2(clr_dist_matrix ~phyloseq::sample_data(alo_clr)$Gender, permutati
 
 
 ```
+
 ```{r ANDONIS area condition}
 
 #ADONIS test for Normal vs Afflicted
