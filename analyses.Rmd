@@ -270,7 +270,7 @@ ggplot(plot_df, aes(x = Genus, y = mean_abundance, fill = Area_Cond)) +
   scale_fill_manual(values = c("red", "black"))+
   coord_flip()
 
-ggsave("figures/Supplemental_AverageRelativeAbd_Genus.pdf")
+ggsave("figures/Figure1.pdf")
   
 ```
 
@@ -343,36 +343,11 @@ ggplot(alpha.table,
 
   
 
-ggsave("figures/Fig1a.pdf", height = 4, width = 5)
+ggsave("figures/Fig2a.pdf", height = 4, width = 5)
 
 
 ```
 
-```{r ages by 20 years}
-
-alpha.table %>% 
-  mutate(Age_Cat2 = case_when(Age < 40 ~ "1) Less than 40", 
-                              Age < 60 & Age > 39  ~ "2) 40 to 59", 
-                              Age > 59 ~ "3) 60+")) %>% 
-  ggplot(aes(x = Area_Cond, y = diversity_shannon)) +
-  geom_boxplot(aes(color = Area_Cond), show.legend = F) +
-  geom_point(aes(color = Area_Cond))+
-  stat_compare_means(method="wilcox") +
-  stat_cor()+
-  scale_color_manual(values = c("red", "black"))+
-  facet_wrap(~Age_Cat2)+
-  guides(color = guide_legend(override.aes = list(shape = 16, size = 3, fill = NA)))+
-  labs(x = " ", y = "Shannon Diversity", title = "B") +
-      theme(axis.line.y = element_blank(),
-        axis.ticks.y = element_blank(), 
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        legend.position = "none")
- 
-#ggsave("figures/Fig1b.pdf", height = 4, width = 5)
-
-
-```
 
 ```{r figure based on the median age }
 
@@ -385,9 +360,10 @@ alpha.table %>%
   geom_point(aes(color = Area_Cond))+
   stat_compare_means(method="wilcox") +
   stat_cor()+
-  scale_color_manual(values = c("red", "black"))+
+  scale_color_manual(values = c("black", "red"))+
   facet_wrap(~Age_Cat2)+
   guides(color = guide_legend(override.aes = list(shape = 16, size = 3, fill = NA)))+
+    theme_bw()+
   labs(x = " ", y = "Shannon Diversity", title = "B") +
       theme(axis.line.y = element_blank(),
         axis.ticks.y = element_blank(), 
@@ -395,7 +371,8 @@ alpha.table %>%
         axis.text.y = element_text(size = 12),
         legend.position = "none")
 
-ggsave("figures/fig1brevised.pdf", )
+
+ggsave("figures/fig2b.pdf", )
 
 ```
 
@@ -476,9 +453,6 @@ alpha.table %>%
 #Center log ratio the phyloseq file
 alo_clr <- microbiome::transform(ps_data, "clr")
 
-
-
-
 ```
 
 ```{r  RDA}
@@ -504,7 +478,7 @@ sapply(ord_clr$CA$eig[1:10], function(x) x / sum(ord_clr$CA$eig))
 
 ```
 
-```{r fig1c}
+```{r fig2c}
 
 
 clr1 <- ord_clr$CA$eig[1] / sum(ord_clr$CA$eig)
@@ -520,7 +494,7 @@ phyloseq::plot_ordination(ps_data, ord_clr, type="samples", color="Area_Cond")+
   labs(title = "C")
 
 
-ggsave("figures/Fig1c.pdf", width = 4, height = 6)
+ggsave("figures/Fig2c.pdf", width = 4, height = 6)
 
 
 
@@ -657,7 +631,6 @@ ggplot(dist_long, aes(x = Comparison, y = Distance, fill = Condition)) +
   stat_compare_means(method = "wilcox")+
   theme(legend.title = element_blank())
 
-ggsave("figures/varianceWcondition.pdf")
 
 
 ggplot(dist_long, aes(x = Comparison, y = Distance)) +
@@ -668,7 +641,6 @@ ggplot(dist_long, aes(x = Comparison, y = Distance)) +
   theme_minimal() +
   stat_compare_means(method = "wilcox")
 
-ggsave("figures/variance.pdf")
 
 ```
 
@@ -760,34 +732,15 @@ plotDysbiosisGradient(df=dysbiosis,
                                 
                         
                                   bg_colors = rev(brewer.pal(9, "Reds")),
-                                  jitter_width = 0.1) +
+                                  jitter_width = 0.15, 
+                        point_size = 8) +
   labs(y="Dysbiosis Score", subtitle = " ") +
   theme(legend.title = element_blank())+
   # adjust the x and y values to fit to plot
   ggplot2::annotate("text",  x = 0.65, y = .1, label = "Center",color="white")
 
-ggsave("Figures/Fig2.pdf", height =6, width =5)
+ggsave("Figures/Fig3.pdf")
 
-plotDysbiosisGradient(df = dysbiosis,
-                      score = "CentroidDist_score",
-                      high_line = 0.0,
-                      group_var = "Area_Cond",
-                      group_colors = c("Normal" = "black", "Afflicted" = "brown3"),
-                      bg_colors = rev(brewer.pal(9, "Reds")),
-                      jitter_width = 0) +
-  geom_text(data = dysbiosis,
-            aes(y = CentroidDist_score, 
-                x = 1, # or adjust to match the y-location of points
-                label = Person_ID),
-            #position = position_jitter(width = 0.1, height = 0),
-            size = 3, 
-            vjust = -1, 
-            check_overlap = TRUE) +
-  labs(y = "Dysbiosis Score", subtitle = " ") +
-  theme(legend.title = element_blank()) +
-  annotate("text", x = 0.65, y = 0.1, label = "Center", color = "white")
-
-#ggsave("figures/labeleddysbiois.pdf")
 
 
 ```
@@ -925,7 +878,6 @@ res.data.df %>%
         axis.ticks.y = element_blank(), 
        axis.text.y = element_text(size = 12)) 
  
-ggsave("figures/Fig4.pdf")
 
 ```
 
@@ -1078,7 +1030,6 @@ imp100.merged %>%
   labs(x = "Top taxa for classifying dysbiotic scalp sites",  y = "Mean Decrease Accuracy (%)")+
   theme(legend.position = "none")
 
-ggsave("figures/Fig3.pdf", height = 5, width =6)
 
 
 
@@ -1088,7 +1039,7 @@ ggsave("figures/Fig3.pdf", height = 5, width =6)
 ## Compare Important Taxa 
 
 
-```{r v2 Extract the significant taxa from both tests}
+```{r  Extract the significant taxa from both tests}
 
 #extract diff abundant taxa from the mixed effected model
 res.data <- res.data %>% filter(pvalue <0.05)
@@ -1199,7 +1150,7 @@ OTU.filt_rel.df %>%
   axis.text.y = element_blank())+
   facet_wrap(~Genus, ncol = 3, scales = "free_y") 
 
-ggsave("figures/Figure5.pdf")
+ggsave("figures/Figure4.pdf")
 
 
  
