@@ -1,6 +1,6 @@
 # Defining-microbial-dysbiosis
 
-This repository serves as a companion to the article “Utility of a quantitative approach to microbial dysbiosis using machine learning in an African American cohort with self-reported hair loss”, currently a pre-print on bioRxiv. All stastical analyses and figures produced in the paper can be found in the analyses files.
+This repository serves as a companion to the article “Scalp microbiome differences in subjects with self-reported hair loss: A quantitative approach to microbial dysbiosis” (https://doi.org/10.1111/ics.70101). All stastical analyses and figures produced in the paper can be found in the analyses files.
 
 In this work we provide an approach to calculating dysbiosis for microbiome-associated diseases.
 
